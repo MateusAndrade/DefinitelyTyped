@@ -1,5 +1,5 @@
-import EmberObject from '@ember/object';
-import { Opaque } from 'ember/-private/type-utils';
+import EmberObject from "@ember/object";
+import { Opaque } from "ember/-private/type-utils";
 
 // --- Type utilities for signatures --- //
 // Type-only "symbol" to use with `EmptyObject` below, so that it is *not*
@@ -41,16 +41,28 @@ export interface HelperSignature {
 type GetOrElse<Obj, K, Fallback> = K extends keyof Obj ? Obj[K] : Fallback;
 
 /** Given a signature `S`, get back the `Args` type. */
-type ArgsFor<S> = 'Args' extends keyof S
-    ? {
-          Named: GetOrElse<S['Args'], 'Named', DefaultNamed>;
-          Positional: GetOrElse<S['Args'], 'Positional', []>;
-      }
+type ArgsFor<S> = "Args" extends keyof S ? {
+        Named: GetOrElse<S["Args"], "Named", DefaultNamed>;
+        Positional: GetOrElse<S["Args"], "Positional", []>;
+    }
     : { Named: DefaultNamed; Positional: [] };
 
 interface LegacyArgsFor<T> {
-    Named: GetOrElse<T, 'NamedArgs', DefaultNamed>;
-    Positional: GetOrElse<T, 'PositionalArgs', DefaultPositional>;
+    Named: GetOrElse<T, "NamedArgs", DefaultNamed>;
+    Positional: GetOrElse<T, "PositionalArgs", DefaultPositional>;
+}
+
+// This type allows us to present a slightly-less-obtuse error message
+// when attempting to resolve the signature of a helper that doesn't have
+// one declared from within a tool like Glint.
+declare const BadType: unique symbol;
+interface BadType<Message> {
+    [BadType]: Message;
+}
+
+interface MissingSignatureArgs {
+    Named: BadType<"This helper is missing a signature">;
+    Positional: unknown[];
 }
 
 /**
@@ -71,16 +83,22 @@ interface LegacyArgsFor<T> {
 // all `ExpandSignature` types fully general to work with *any* invokable. But
 // "future" here probably means Ember v5. :sobbing:
 export interface ExpandSignature<T> {
-    Args: keyof T extends 'Args' | 'Return' // Is this a `Signature`?
-        ? ArgsFor<T> // Then use `Signature` args
+    Args: unknown extends T // Is this the default (i.e. unspecified) signature?
+        ? MissingSignatureArgs // Then return our special "missing signature" type
+        : keyof T extends "Args" | "Return" // Is this a `Signature`?
+            ? ArgsFor<T> // Then use `Signature` args
         : LegacyArgsFor<T>; // Otherwise fall back to classic `Args`.
-    Return: 'Return' extends keyof T ? T['Return'] : unknown;
+    Return: "Return" extends keyof T ? T["Return"] : unknown;
 }
 
-type NamedArgs<S> = ExpandSignature<S>['Args']['Named'];
-type PositionalArgs<S> = ExpandSignature<S>['Args']['Positional'];
+// The `unknown extends S` checks on both of these are here to preserve backward
+// compatibility with the existing non-`Signature` definition. When migrating
+// into Ember or otherwise making a breaking change, we can drop the "default"
+// in favor of just using `ExpandSignature`.
+type NamedArgs<S> = unknown extends S ? Record<string, unknown> : ExpandSignature<S>["Args"]["Named"];
+type PositionalArgs<S> = unknown extends S ? unknown[] : ExpandSignature<S>["Args"]["Positional"];
 
-type Return<S> = GetOrElse<S, 'Return', unknown>;
+type Return<S> = GetOrElse<S, "Return", unknown>;
 
 /**
  * Ember Helpers are functions that can compute values, and are used in templates.
@@ -111,8 +129,18 @@ export default class Helper<S = unknown> extends EmberObject {
 // information supplied via this generic. While it may appear useless on this
 // class definition and extension, it is used by external tools and should not
 // be removed.
-// tslint:disable-next-line:no-unnecessary-generics
+// eslint-disable-next-line @definitelytyped/no-unnecessary-generics
 export default interface Helper<S> extends Opaque<S> {}
+
+// This type exists to provide a non-user-constructible, non-subclassable
+// type representing the conceptual "instance type" of a function helper.
+// The abstract field of type `never` presents subclassing in userspace of
+// the value returned from `helper()`. By extending `Helper<S>`, any
+// augmentations of the `Helper` type performed by tools like Glint will
+// also apply to function-based helpers as well.
+export abstract class FunctionBasedHelperInstance<S> extends Helper<S> {
+    protected abstract __concrete__: never;
+}
 
 /**
  * The type of a function-based helper.
@@ -121,13 +149,11 @@ export default interface Helper<S> extends Opaque<S> {}
  *   returned by the `helper` function can be named (and indeed can be exported
  *   like `export default helper(...)` safely).
  */
-// The generic here is for a *signature: a way to hang information for tools
-// like Glint which can provide typey checking for component templates using
-// information supplied via this generic. While it may appear useless on this
-// class definition and extension, it is used by external tools and should not
-// be removed.
-// tslint:disable-next-line:no-unnecessary-generics
-export interface FunctionBasedHelper<S> extends Opaque<S> {}
+// Making `FunctionBasedHelper` a bare constructor type allows for type
+// parameters to be preserved when `helper()` is passed a generic function.
+// By making it `abstract` and impossible to subclass (see above), we prevent
+// users from attempting to instantiate a return value from `helper()`.
+export type FunctionBasedHelper<S> = abstract new() => FunctionBasedHelperInstance<S>;
 
 /**
  * In many cases, the ceremony of a full `Helper` class is not required.

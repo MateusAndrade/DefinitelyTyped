@@ -1,37 +1,31 @@
-// Type definitions for serverless 3.0
-// Project: https://github.com/serverless/serverless#readme
-// Definitions by: Hassan Khan <https://github.com/hassankhan>
-//                 Jonathan M. Wilbur <https://github.com/JonathanWilbur>
-//                 Alex Pavlenko <https://github.com/a-pavlenko>
-//                 Frédéric Barthelet <https://github.com/fredericbarthelet>
-//                 Bryan Hunter <https://github.com/bryan-hunter>
-//                 Thomas Aribart <https://github.com/thomasaribart>
-//                 Gareth Jones <https://github.com/G-Rath>
-//                 Abdullah Ali <https://github.com/AbdullahAli>
-//                 François Farge <https://github.com/fargito>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
-import Service = require('./classes/Service');
-import Plugin = require('./classes/Plugin');
-import PluginManager = require('./classes/PluginManager');
-import Utils = require('./classes/Utils');
-import YamlParser = require('./classes/YamlParser');
-import AwsProvider = require('./plugins/aws/provider/awsProvider');
-import ApiGatewayValidate = require('./plugins/aws/package/compile/events/apiGateway/lib/validate');
+import Service = require("./classes/Service");
+import PluginManager = require("./classes/PluginManager");
+import Utils = require("./classes/Utils");
+import YamlParser = require("./classes/YamlParser");
+import AwsProvider = require("./plugins/aws/provider/awsProvider");
+import ServerlessError = require("./classes/ServerlessError");
 
 declare namespace Serverless {
+    /**
+     * CLI options provided to the command
+     * @example
+     * // serverless --verbose --stage prod
+     * { verbose: true, stage: 'prod' }
+     */
     interface Options {
         function?: string | undefined;
         watch?: boolean | undefined;
         verbose?: boolean | undefined;
         extraServicePath?: string | undefined;
-        stage: string | null;
-        region: string | null;
+        stage?: string | undefined;
+        region?: string | undefined;
         noDeploy?: boolean | undefined;
+        [key: string]: string | boolean | string[] | undefined;
     }
 
     interface Config {
         servicePath: string;
+        serviceDir: string;
     }
 
     interface FunctionDefinition {
@@ -42,7 +36,7 @@ declare namespace Serverless {
         timeout?: number | undefined;
         memorySize?: number | undefined;
         environment?: { [name: string]: string } | undefined;
-        events: Event[];
+        events: AwsProvider.Event[];
         tags?: { [key: string]: string } | undefined;
     }
 
@@ -61,9 +55,6 @@ declare namespace Serverless {
         image: string;
     }
 
-    // Other events than ApiGatewayEvent are available
-    type Event = ApiGatewayValidate.ApiGatewayEvent | object;
-
     interface Package {
         /** @deprecated use `patterns` instead */
         include?: string[] | undefined;
@@ -72,6 +63,12 @@ declare namespace Serverless {
         patterns?: string[] | undefined;
         artifact?: string | undefined;
         individually?: boolean | undefined;
+    }
+
+    type Event = AwsProvider.Event | object;
+
+    interface Classes {
+        Error: typeof ServerlessError;
     }
 }
 
@@ -101,8 +98,11 @@ declare class Serverless {
     yamlParser: YamlParser;
     pluginManager: PluginManager;
 
+    classes: Serverless.Classes;
     config: Serverless.Config;
+    configurationFilename: string;
     serverlessDirPath: string;
+    serviceDir: string;
 
     service: Service;
     version: string;

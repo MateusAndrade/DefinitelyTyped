@@ -1,12 +1,3 @@
-// Type definitions for non-npm package Intercom Web API 2.8
-// Project: https://docs.intercom.io/
-//            configure-intercom-for-your-product-or-site/
-//            customize-the-intercom-messenger/the-intercom-javascript-api
-// Definitions by: Andrew Fong <https://github.com/fongandrew>
-//                 Samer Albahra <https://github.com/salbahra>
-//                 Onat Yigit Mercan <https://github.com/onatm>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
 declare namespace Intercom_ {
     interface IntercomSettings {
         // Messenger attributes
@@ -62,6 +53,12 @@ declare namespace Intercom_ {
         trackEvent: (tag?: string, metadata?: any) => void;
         getVisitorId: () => string;
         startTour: (tourId: number) => void;
+        showArticle: (articleId: number) => void;
+        showConversation: (conversationId: number) => void;
+        startSurvey: (surveyId: number) => void;
+        reattach_activator: () => void;
+        showSpace: (space: string) => void;
+        startChecklist: (checklistId: number) => void;
     }
 
     type IntercomCommand = keyof IntercomCommandSignature;
@@ -90,7 +87,7 @@ declare namespace Intercom_ {
     }
 
     interface IntercomAvatar {
-        type: 'avatar';
+        type: "avatar";
         image_url: string;
     }
 

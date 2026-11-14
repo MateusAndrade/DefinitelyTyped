@@ -1,4 +1,4 @@
-import { Callback, Handler } from '../handler';
+import { Callback, Handler } from "../handler";
 
 export type LexV2Handler = Handler<LexV2Event, LexV2Result>;
 export type LexV2Callback = Callback<LexV2Result>;
@@ -7,15 +7,20 @@ export type LexV2Callback = Callback<LexV2Result>;
 // https://docs.aws.amazon.com/lexv2/latest/dg/lambda.html
 export interface LexV2Event {
     messageVersion: string;
-    invocationSource: 'DialogCodeHook' | 'FulfillmentCodeHook';
-    inputMode: 'DTMF' | 'Speech' | 'Text';
+    invocationSource: "DialogCodeHook" | "FulfillmentCodeHook";
+    inputMode: "DTMF" | "Speech" | "Text";
     responseContentType: string;
     sessionId: string;
     inputTranscript: string;
     bot: LexV2Bot;
     interpretations: LexV2Interpretation[];
-    requestAttributes: { [key: string]: string };
+    proposedNextState: {
+        dialogAction: LexV2DialogAction;
+        intent: LexV2Intent;
+    };
+    requestAttributes?: Record<string, string>;
     sessionState: LexV2SessionState;
+    transcriptions: LexV2Transcription[];
 }
 
 export interface LexV2Bot {
@@ -24,7 +29,7 @@ export interface LexV2Bot {
     aliasId: string;
     aliasName: string;
     localeId: string;
-    version: string;
+    version: string; // 'DRAFT' | `${number}`
 }
 
 export interface LexV2Interpretation {
@@ -34,31 +39,20 @@ export interface LexV2Interpretation {
 }
 
 export interface LexV2Intent {
-    confirmationState: 'Confirmed' | 'Denied' | 'None';
+    confirmationState: "Confirmed" | "Denied" | "None";
     name: string;
-    slots: { [name: string]: LexV2Slot };
+    slots: LexV2Slots;
     state: LexV2IntentState;
     kendraResponse?: any;
 }
 
 export type LexV2IntentState =
-    | 'Failed'
-    | 'Fulfilled'
-    | 'FulfillmentInProgress'
-    | 'InProgress'
-    | 'ReadyForFulfillment'
-    | 'Waiting';
-
-export interface LexV2Slot {
-    shape?: string;
-    value: LexV2SlotValue;
-}
-
-export interface LexV2SlotValue {
-    interpretedValue: string;
-    originalValue: string;
-    resolvedValues: string[];
-}
+    | "Failed"
+    | "Fulfilled"
+    | "FulfillmentInProgress"
+    | "InProgress"
+    | "ReadyForFulfillment"
+    | "Waiting";
 
 export interface LexV2SentimentResponse {
     sentiment: string;
@@ -74,7 +68,7 @@ export interface LexV2SentimentScore {
 
 export interface LexV2SessionState {
     activeContexts?: LexV2ActiveContext[];
-    sessionAttributes?: { [key: string]: string };
+    sessionAttributes?: Record<string, string>;
     dialogAction?: LexV2DialogAction;
     intent: LexV2Intent;
     originatingRequestId: string;
@@ -82,46 +76,49 @@ export interface LexV2SessionState {
 
 export interface LexV2ActiveContext {
     name: string;
-    contextAttributes: { [key: string]: string };
+    contextAttributes: Record<string, string>;
     timeToLive: {
         timeToLiveInSeconds: number;
-        turnsToLive: number
+        turnsToLive: number;
     };
 }
 
-export interface LexV2DialogAction {
-    slotToElicit?: string;
-    type: 'Close' | 'ConfirmIntent' | 'Delegate' | 'ElicitIntent' | 'ElicitSlot';
-}
+export type LevV2DialogActionWithoutSlot =
+    | { type: "Close" }
+    | { type: "ConfirmIntent" }
+    | { type: "Delegate" }
+    | { type: "ElicitIntent" };
 
-export interface LexV2ResultDialogAction extends LexV2DialogAction {
-    slotElicitationStyle?: 'Default' | 'SpellByLetter' | 'SpellByWord';
-}
+export type LexV2DialogAction =
+    | (LevV2DialogActionWithoutSlot & { slotToElicit?: never })
+    | { type: "ElicitSlot"; slotToElicit: string };
+
+export type LexV2ResultDialogAction =
+    | (LevV2DialogActionWithoutSlot & { slotToElicit?: never })
+    | { type: "ElicitSlot"; slotToElicit: string; slotElicitationStyle?: "Default" | "SpellByLetter" | "SpellByWord" };
 
 export interface LexV2Result {
     sessionState: {
-        sessionAttributes?: { [key: string]: string };
+        sessionAttributes?: Record<string, string>;
         dialogAction: LexV2ResultDialogAction;
         intent?: {
             name?: string;
             state: LexV2IntentState;
-            slots?: { [name: string]: LexV2Slot };
+            slots?: LexV2Slots;
         };
     };
     messages?: LexV2Message[];
 }
 
-export type LexV2Message =
-    | LexV2ContentMessage
-    | LexV2ImageResponseCardMessage;
+export type LexV2Message = LexV2ContentMessage | LexV2ImageResponseCardMessage;
 
 export interface LexV2ContentMessage {
-    contentType: 'CustomPayload' | 'PlainText' | 'SSML';
+    contentType: "CustomPayload" | "PlainText" | "SSML";
     content: string;
 }
 
 export interface LexV2ImageResponseCardMessage {
-    contentType: 'ImageResponseCard';
+    contentType: "ImageResponseCard";
     imageResponseCard: LexV2ImageResponseCard;
 }
 
@@ -135,4 +132,33 @@ export interface LexV2ImageResponseCard {
 export interface LexV2ImageResponseCardButton {
     text: string;
     value: string;
+}
+
+export type LexV2Slot = LexV2ScalarSlotValue | LexV2ListSlotValue;
+export type LexV2Slots = Record<string, LexV2Slot | null>;
+
+export interface LexV2ScalarSlotValue {
+    shape: "Scalar";
+    value: LexV2SlotValue;
+}
+
+export interface LexV2ListSlotValue {
+    shape: "List";
+    value: LexV2SlotValue;
+    values: LexV2ScalarSlotValue[];
+}
+
+export interface LexV2SlotValue {
+    interpretedValue?: string;
+    originalValue: string;
+    resolvedValues: string[];
+}
+
+export interface LexV2Transcription {
+    transcription: string;
+    transcriptionConfidence: number;
+    resolvedContext: {
+        intent: string;
+    };
+    resolvedSlots: LexV2Slots;
 }

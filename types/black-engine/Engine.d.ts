@@ -1,9 +1,9 @@
 export class Engine extends MessageDispatcher {
     constructor(
         containerElementId: string,
-        gameClass: new () => GameObject,
-        videoDriverClass: new (arg1: HTMLElement, arg2: number, arg3: number) => VideoNullDriver,
-        systemClasses?: Array<new () => System>,
+        gameClass: new() => GameObject,
+        videoDriverClass: new(arg1: HTMLElement, arg2: number, arg3: number) => VideoNullDriver,
+        systemClasses?: Array<new() => System>,
     );
     id: number;
     private mContainerElementId;
@@ -47,9 +47,9 @@ export class Engine extends MessageDispatcher {
     private __bootStage;
     private __onVisibilityChangeFallback;
     __onVisibilityChange(): void;
-    hasSystem(systemTypeName: () => void): boolean;
+    hasSystem(systemTypeName: any): boolean;
     private __addSystem;
-    getSystem(typeName: () => void): System | null;
+    getSystem<T>(typeName: T): T | null;
     private __bootVideo;
     start(): void;
     stop(): void;
@@ -82,10 +82,10 @@ export class Engine extends MessageDispatcher {
     set maxUpdatesPerFrame(arg: number);
     get maxUpdatesPerFrame(): number;
 }
-import { MessageDispatcher } from './messages/MessageDispatcher';
-import { System } from './core/System';
-import { GameObject } from './core/GameObject';
-import { Viewport } from './core/Viewport';
-import { Stage } from './display/Stage';
-import { VideoNullDriver } from './drivers/VideoNullDriver';
-import { Component } from './core/Component';
+import { Component } from "./core/Component";
+import { GameObject } from "./core/GameObject";
+import { System } from "./core/System";
+import { Viewport } from "./core/Viewport";
+import { Stage } from "./display/Stage";
+import { VideoNullDriver } from "./drivers/VideoNullDriver";
+import { MessageDispatcher } from "./messages/MessageDispatcher";

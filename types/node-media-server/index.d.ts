@@ -1,8 +1,3 @@
-// Type definitions for node-media-server 2.3
-// Project: https://github.com/illuspas/Node-Media-Server
-// Definitions by: Thomas Seberechts <https://github.com/Tseberechts>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
 interface Config {
     logType?: number;
     rtmp?: RtmpConfig;
@@ -39,33 +34,36 @@ interface AuthConfig {
     play?: boolean;
     publish?: boolean;
     secret?: string;
+    api?: boolean;
+    api_user?: string;
+    api_pass?: string;
 }
 
 interface TransConfig {
     ffmpeg: string;
-    tasks: [TransTaskConfig];
+    tasks: TransTaskConfig[];
 }
 
 interface RelayConfig {
-    tasks: [RelayTaskConfig];
+    tasks: RelayTaskConfig[];
     ffmpeg: string;
 }
 
 interface FissionConfig {
     ffmpeg: string;
-    tasks: [FissionTaskConfig];
+    tasks: FissionTaskConfig[];
 }
 
 interface TransTaskConfig {
     app: string;
     hls?: boolean;
     hlsFlags?: string;
-    dash?: true;
+    dash?: boolean;
     dashFlags?: string;
     vc?: string;
-    vcParam?: [string];
+    vcParam?: string[];
     ac?: string;
-    acParam?: [string];
+    acParam?: string[];
     rtmp?: boolean;
     rtmpApp?: string;
     mp4?: boolean;
@@ -78,11 +76,12 @@ interface RelayTaskConfig {
     mode: string;
     edge: string;
     rtsp_transport?: string;
+    appendName?: boolean;
 }
 
 interface FissionTaskConfig {
     rule: string;
-    model: [FissionTaskModel];
+    model: FissionTaskModel[];
 }
 
 interface FissionTaskModel {
@@ -97,7 +96,14 @@ declare class NodeMediaServer {
     run(): void;
     on(eventName: string, listener: (id: string, StreamPath: string, args: object) => void): void;
     stop(): void;
-    getSession(id: string): Map<string, unknown>;
+    /**
+     * Looks up a single session by its id.
+     *
+     * The returned value is one of the internal session objects (`NodeRtmpSession`,
+     * `NodeFlvSession`, `NodeRelaySession`, ...), which this package does not
+     * declare, or `undefined` when no session is registered for `id`.
+     */
+    getSession(id: string): unknown;
 }
 
 export = NodeMediaServer;

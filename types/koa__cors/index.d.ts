@@ -1,12 +1,4 @@
-// Type definitions for @koa/cors 3.1
-// Project: https://github.com/koajs/cors
-// Definitions by: Xavier Stouder <https://github.com/Xstoudi>
-//                 Steve Hipwell <https://github.com/stevehipwell>
-//                 Steven McDowall <https://github.com/sjmcdowall>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-// TypeScript Version: 2.3
-
-import * as Koa from 'koa';
+import Koa = require("koa");
 
 export = cors;
 
@@ -19,11 +11,14 @@ declare function cors(options?: cors.Options): Koa.Middleware;
 
 declare namespace cors {
     /**
-     * Middleware configration options.
+     * Middleware configuration options.
      */
     interface Options {
         /**
-         * `Access-Control-Allow-Origin`, default is request Origin header.
+         * `Access-Control-Allow-Origin`, default is '*'
+         *
+         * @remarks
+         * If `credentials` set and return `true`, the `origin` default value will set to the request `Origin` header
          *
          * @remarks
          * If a function is provided, it will be called for each request with
@@ -71,5 +66,19 @@ declare namespace cors {
          * Add set headers to `err.header` if an error is thrown
          */
         keepHeadersOnError?: boolean | undefined;
+
+        /**
+         * Add `Cross-Origin-Opener-Policy` & `Cross-Origin-Embedder-Policy` to response headers, default is `false`
+         *
+         * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer/Planned_changes
+         */
+        secureContext?: boolean | undefined;
+
+        /**
+         * Handle `Access-Control-Request-Private-Network` request by return `Access-Control-Allow-Private-Network`, default is `false`
+         *
+         * @see https://wicg.github.io/private-network-access/
+         */
+        privateNetworkAccess?: boolean | undefined;
     }
 }

@@ -3,9 +3,9 @@ export class MessageDispatcher {
     constructor(checkForStage?: boolean);
     mBindings: {};
     checkForStage: boolean;
-    on(name: string, callback: () => void, context?: any): MessageBinding;
+    on(name: string, callback: (...params: any[]) => void, context?: any): MessageBinding;
     off(...names: string[]): void;
-    once(name: string, callback: () => void, context?: any): MessageBinding;
+    once(name: string, callback: (...params: any[]) => void, context?: any): MessageBinding;
     post(name: string, ...params: any[]): void;
     get parent(): MessageDispatcher;
     get stage(): any;
@@ -23,4 +23,4 @@ export namespace MessageDispatcher {
         [x: string]: any[];
     };
 }
-import { MessageBinding } from './MessageBinding';
+import { MessageBinding } from "./MessageBinding";

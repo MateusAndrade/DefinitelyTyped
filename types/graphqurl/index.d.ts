@@ -1,8 +1,3 @@
-// Type definitions for graphqurl 1.0
-// Project: https://github.com/hasura/graphqurl
-// Definitions by: Peter Boyer <https://github.com/ptboyer/>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-
 export function createClient(options: Options): Client;
 
 export interface Client {
